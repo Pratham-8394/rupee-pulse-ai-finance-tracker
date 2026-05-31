@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090d10">
+  <meta name="description" content="Private finance tracker for Google Pay PDF statements.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>Rupee Pulse</title>
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <div id="profileModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+    <section class="modal-card">
+      <div class="modal-head">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </div>
+        <div>
+          <h2 id="profileModalTitle">Create Profile</h2>
+          <p>Keep each person’s Google Pay statements separate.</p>
+        </div>
+      </div>
+      <label class="field-label" for="profileNameInput">Profile name</label>
+      <input id="profileNameInput" class="modal-input" type="text" maxlength="32" placeholder="Example: Pratham">
+      <div class="modal-actions">
+        <button id="profileCancelBtn" class="ghost-button" type="button">Cancel</button>
+        <button id="profileCreateBtn" class="primary-button" type="button">Create</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="confirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <section class="modal-card">
+      <div class="modal-head">
+        <div class="modal-icon warn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2.6 17.1A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.9L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        </div>
+        <div>
+          <h2 id="confirmTitle">Clear profile data?</h2>
+          <p id="confirmMessage">This removes imported statements from the selected profile only.</p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="confirmCancelBtn" class="ghost-button" type="button">Cancel</button>
+        <button id="confirmOkBtn" class="danger-button" type="button">Clear data</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="lockModal" class="modal-backdrop hidden lock-backdrop" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+    <section class="modal-card">
+      <div class="modal-head">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3"/><path d="M6 11h12v10H6z"/></svg>
+        </div>
+        <div>
+          <h2 id="lockTitle">Unlock Rupee Pulse</h2>
+          <p>Your finance vault is encrypted on this phone.</p>
+        </div>
+      </div>
+      <label class="field-label" for="vaultUnlockInput">App passcode</label>
+      <input id="vaultUnlockInput" class="modal-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter passcode">
+      <div class="modal-actions">
+        <button id="vaultUnlockBtn" class="primary-button" type="button">Unlock</button>
+        <button id="vaultUseEmptyBtn" class="ghost-button" type="button">Use empty app</button>
+      </div>
+    </section>
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">₹</div>
+      <div>
+        <h1>Rupee Pulse</h1>
+        <p>Private UPI finance</p>
+      </div>
+    </div>
+    <button id="installBtn" class="icon-action hidden" type="button" aria-label="Install app">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 15v4h14v-4"/></svg>
+    </button>
+  </header>
+
+  <main id="appShell" class="app-shell">
+    <section class="profile-strip">
+      <div class="profile-main">
+        <div id="profileAvatar" class="profile-avatar">P</div>
+        <div class="profile-copy">
+          <span>Active profile</span>
+          <strong id="profileName">Personal</strong>
+          <small id="profileMeta">No statements yet</small>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <select id="profileSelect" aria-label="Select profile"></select>
+        <button id="addProfileBtn" class="icon-action" type="button" aria-label="Create profile">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <section id="viewHome" class="view active-view">
+      <section id="emptyState" class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+        </div>
+        <h2>Import a Google Pay statement to begin</h2>
+        <p>Import is inside More. Your files are read locally on this phone and saved under the selected profile.</p>
+        <button class="primary-button" data-open-panel="panelImport" type="button">Go to Import</button>
+        <button id="loadDemoBtn" class="ghost-button" type="button">Load demo profile data</button>
+      </section>
+
+      <section id="homeContent" class="hidden">
+        <section class="hero-card">
+          <div class="hero-row">
+            <div>
+              <span class="kicker">Monthly overview</span>
+              <h2 id="heroSpent">₹0</h2>
+              <p id="heroSub">No period selected</p>
+            </div>
+            <div class="hero-badge" id="heroBadge">Healthy</div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat"><span>Sent</span><b id="statSent">₹0</b></div>
+            <div class="stat"><span>Received</span><b id="statReceived">₹0</b></div>
+            <div class="stat"><span>Net flow</span><b id="statNet">₹0</b></div>
+          </div>
+        </section>
+
+        <section class="quick-grid">
+          <button class="quick-card" data-view-target="viewDaily" type="button">
+            <span class="quick-icon daily"><svg viewBox="0 0 24 24"><path d="M5 19V9M12 19V5M19 19v-7"/></svg></span>
+            <strong>Daily Pulse</strong>
+            <small id="homeDailyMeta">Check limit status</small>
+          </button>
+          <button class="quick-card" data-view-target="viewFlow" type="button">
+            <span class="quick-icon flow"><svg viewBox="0 0 24 24"><path d="M7 7h10l-3-3M17 17H7l3 3"/></svg></span>
+            <strong>Cash Flow</strong>
+            <small id="homeFlowMeta">Bank and category flow</small>
+          </button>
+        </section>
+
+        <section class="ai-coach-card">
+          <div class="ai-coach-top">
+            <div>
+              <span class="kicker">AI monthly coach</span>
+              <h3 id="aiCoachTitle">Reading your spend pattern</h3>
+            </div>
+            <div class="ai-score"><strong id="aiCoachScore">0</strong><span>/100</span></div>
+          </div>
+          <p id="aiCoachText">Import statements to generate private AI finance guidance.</p>
+          <div id="aiCoachChips" class="chip-row"></div>
+        </section>
+
+        <div class="section-head">
+          <h3>AI highlights</h3>
+          <span id="homeInsightMeta">Updated now</span>
+        </div>
+        <div id="insightsList" class="insight-list"></div>
+      </section>
+    </section>
+
+    <section id="viewDaily" class="view">
+      <section class="control-card pro-control">
+        <div>
+          <label for="monthSelect">Statement month</label>
+          <select id="monthSelect"></select>
+        </div>
+        <div>
+          <label for="dailyLimitInput">Daily limit</label>
+          <input id="dailyLimitInput" type="number" min="1" step="50" inputmode="numeric">
+        </div>
+        <button id="saveLimitBtn" class="primary-button compact" type="button">Save</button>
+      </section>
+
+      <div class="section-head">
+        <h3>Daily Pulse</h3>
+        <span id="dailyPulseMeta">₹0 limit</span>
+      </div>
+      <section class="chart-card">
+        <div class="chart-summary">
+          <div><span>Saved / extra</span><b id="savedOrExtra">₹0</b></div>
+          <div><span>Over-limit total</span><b id="cumExtra">₹0</b></div>
+        </div>
+        <div id="dailyBars" class="daily-bars" aria-label="Daily expense bar chart"></div>
+        <div class="legend">
+          <span><i class="swatch safe"></i>Under limit</span>
+          <span><i class="swatch alert"></i>Over limit</span>
+          <span><i class="swatch muted"></i>No spend</span>
+        </div>
+      </section>
+
+      <div class="section-head">
+        <h3>Day-wise expenses</h3>
+        <span id="dailyCountMeta">0 days</span>
+      </div>
+      <div id="dailyList" class="list"></div>
+    </section>
+
+    <section id="viewFlow" class="view">
+      <div class="section-head">
+        <h3>Bank cash flow</h3>
+        <span>Sent + received</span>
+      </div>
+      <div id="bankList" class="list"></div>
+
+      <div class="section-head">
+        <h3>Categories</h3>
+        <span>Tap to inspect</span>
+      </div>
+      <div id="categoryList" class="list"></div>
+
+      <section id="categoryDetail" class="detail-panel hidden">
+        <div class="detail-head">
+          <div>
+            <span>Category detail</span>
+            <h3 id="categoryDetailTitle">Transport</h3>
+          </div>
+          <button class="icon-action" id="closeCategoryDetail" type="button" aria-label="Close category detail">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+        <div id="categoryDailyChart" class="mini-bars"></div>
+        <div id="categoryTxList" class="list"></div>
+      </section>
+    </section>
+
+    <section id="viewMore" class="view">
+      <div class="feature-tabs">
+        <button class="feature-tab active" data-panel="panelImport" type="button">
+          <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/></svg>
+          Import
+        </button>
+        <button class="feature-tab" data-panel="panelBudget" type="button">
+          <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0"/><path d="M12 12l5-5"/></svg>
+          Budget
+        </button>
+        <button class="feature-tab" data-panel="panelMerchants" type="button">
+          <svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M8 8a4 4 0 0 1 8 0"/></svg>
+          Merchants
+        </button>
+        <button class="feature-tab" data-panel="panelLedger" type="button">
+          <svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          Ledger
+        </button>
+        <button class="feature-tab" data-panel="panelSettings" type="button">
+          <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2"/></svg>
+          Settings
+        </button>
+      </div>
+
+      <div id="panelImport" class="feature-panel active-panel">
+        <section class="guide-card">
+          <div class="guide-step"><b>1</b><span>Download monthly Google Pay PDF</span></div>
+          <div class="guide-step"><b>2</b><span>Select the correct profile</span></div>
+          <div class="guide-step"><b>3</b><span>Import and review AI categories</span></div>
+        </section>
+        <section class="import-card">
+          <div>
+            <span class="kicker">Profile import</span>
+            <h3>Import statements for <b id="importProfileName">Personal</b></h3>
+            <p>Each profile has separate transactions, category rules, budgets, and backups.</p>
+          </div>
+          <label class="primary-button">
+            Choose PDF
+            <input id="pdfInput" type="file" accept="application/pdf" multiple>
+          </label>
+        </section>
+        <div class="section-head">
+          <h3>Import history</h3>
+          <span id="importMeta">0 files</span>
+        </div>
+        <div id="importList" class="list"></div>
+      </div>
+
+      <div id="panelBudget" class="feature-panel">
+        <section class="budget-card">
+          <div class="budget-ring" id="budgetRing"><strong id="budgetPercent">0%</strong><span>budget used</span></div>
+          <div class="summary-grid">
+            <div class="mini-panel"><span>Monthly baseline</span><b id="monthBudget">₹0</b><p>Daily limit times days in month.</p></div>
+            <div class="mini-panel"><span>Remaining</span><b id="monthRemaining">₹0</b><p>Estimated safe spending left.</p></div>
+          </div>
+        </section>
+        <div class="section-head">
+          <h3>Category budgets</h3>
+          <span>Edit in Settings</span>
+        </div>
+        <div id="budgetCategoryList" class="list"></div>
+      </div>
+
+      <div id="panelMerchants" class="feature-panel">
+        <section id="merchantHome" class="merchant-home">
+          <button class="merchant-option" data-merchant-screen="frequent" type="button">
+            <span class="merchant-option-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M8 8a4 4 0 0 1 8 0"/></svg>
+            </span>
+            <strong>Frequent merchants</strong>
+            <small id="frequentMerchantMeta">Top merchants by total spend</small>
+          </button>
+          <button class="merchant-option" data-merchant-screen="recurring" type="button">
+            <span class="merchant-option-icon recurring">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2v5h-5"/><path d="M19 11a7 7 0 1 0 2 5"/></svg>
+            </span>
+            <strong>Recurring merchants</strong>
+            <small id="recurringMerchantMeta">Repeated payments and patterns</small>
+          </button>
+        </section>
+
+        <section id="merchantListScreen" class="detail-panel hidden">
+          <div class="detail-head">
+            <button class="icon-action" id="merchantBackHome" type="button" aria-label="Back to merchant options">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg>
+            </button>
+            <div>
+              <span id="merchantListMeta">Merchants</span>
+              <h3 id="merchantListTitle">Frequent merchants</h3>
+            </div>
+          </div>
+          <div id="merchantList" class="list"></div>
+        </section>
+
+        <section id="merchantDetail" class="detail-panel hidden">
+          <div class="detail-head">
+            <button class="icon-action" id="closeMerchantDetail" type="button" aria-label="Back to merchant list">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg>
+            </button>
+            <div>
+              <span id="merchantDetailMeta">Merchant detail</span>
+              <h3 id="merchantDetailTitle">Merchant</h3>
+            </div>
+          </div>
+          <div id="merchantTxList" class="list"></div>
+        </section>
+      </div>
+
+      <div id="panelLedger" class="feature-panel">
+        <section class="review-card">
+          <div>
+            <span class="kicker">AI review queue</span>
+            <h3 id="reviewQueueTitle">No category review needed</h3>
+            <p id="reviewQueueMeta">Low-confidence and large payments appear here.</p>
+          </div>
+          <div id="reviewQueueList" class="list compact-list"></div>
+        </section>
+        <div class="search-card">
+          <input id="ledgerSearch" type="search" placeholder="Search merchant, bank, UPI ID, category">
+          <select id="ledgerFilter">
+            <option value="all">All</option>
+            <option value="Paid">Paid</option>
+            <option value="Received">Received</option>
+            <option value="review">Needs review</option>
+            <option value="over">Over ₹1,000</option>
+          </select>
+        </div>
+        <div id="ledgerList" class="ledger-list"></div>
+      </div>
+
+      <div id="panelSettings" class="feature-panel">
+        <div class="settings-card security-card">
+          <div class="settings-row">
+            <div>
+              <h3>Encrypted vault</h3>
+              <p id="vaultStatus">Local storage is active. Add an app passcode to encrypt saved finance data.</p>
+            </div>
+            <span id="vaultBadge" class="status-pill">Local</span>
+          </div>
+          <label class="field-label" for="vaultPasscodeInput">Passcode</label>
+          <input id="vaultPasscodeInput" class="modal-input" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Minimum 4 digits">
+          <div class="settings-actions">
+            <button id="vaultActionBtn" class="primary-button" type="button">Enable vault</button>
+            <button id="vaultLockBtn" class="ghost-button" type="button">Lock now</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>Profile tools</h3>
+          <p>Create separate profiles for yourself, family, or friends. Each profile stores separate Google Pay statements.</p>
+          <div class="settings-actions">
+            <button id="exportBtn" class="ghost-button" type="button">Export backup</button>
+            <label class="ghost-button">
+              Restore backup
+              <input id="restoreInput" type="file" accept="application/json">
+            </label>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>Category budgets</h3>
+          <div id="categoryBudgetEditor" class="budget-editor"></div>
+        </div>
+        <button id="clearBtn" class="danger-button" type="button">Clear current profile data</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button class="nav-btn active" data-view="viewHome" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" data-view="viewDaily" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7"/></svg>
+      <span>Daily</span>
+    </button>
+    <button class="nav-btn" data-view="viewFlow" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l-3-3M17 17H7l3 3"/></svg>
+      <span>Flow</span>
+    </button>
+    <button class="nav-btn" data-view="viewMore" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
+      <span>More</span>
+    </button>
+  </nav>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

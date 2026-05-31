@@ -1,0 +1,19 @@
+{
+  "name": "Rupee Pulse",
+  "short_name": "RupeePulse",
+  "description": "Personal finance tracker for Google Pay PDF statements.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080a0d",
+  "theme_color": "#080a0d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
