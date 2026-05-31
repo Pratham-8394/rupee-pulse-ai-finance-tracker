@@ -9,7 +9,25 @@ Rupee Pulse converts monthly Google Pay PDF statements into a clean personal fin
 - App: https://rupeepulse-ai.netlify.app/
 - Demo video: https://youtu.be/IpWjlxxtojs
 - Demo statement: https://github.com/Pratham-8394/rupee-pulse-ai-finance-tracker/blob/main/rupee-pulse-demo-gpay-statement.pdf
+## Screenshots
 
+### Home Dashboard
+![Home Dashboard](screenshots/Home_Dashboard.jpeg)
+
+### Daily Dashboard
+![Daily Dashboard](screenshots/Daily_Dashboard.jpeg)
+
+### Flow Dashboard
+![Flow Dashboard](screenshots/Flow_Dashboard.jpeg)
+
+### Merchants Dashboard
+![Merchants Dashboard](screenshots/Merchants_Dashboard.jpeg)
+
+### Ledger Dashboard
+![Ledger Dashboard](screenshots/Ledger_Dashboard.jpeg)
+
+### Settings Dashboard
+![Settings Dashboard](screenshots/Settings_Dashboard.jpeg)
 ## Problem
 
 UPI users make many payments every month, but Google Pay statements are hard to understand as personal finance data. A PDF statement can show transactions, but it does not clearly answer:
